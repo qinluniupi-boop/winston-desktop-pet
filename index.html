@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Winston">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
+  <title>Winston 桌面宠物</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+
+    #pet-container {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 170px;
+      height: 170px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    #pet-sprite {
+      width: 170px;
+      height: 170px;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      transition: transform 0.2s ease;
+      -webkit-app-region: no-drag;
+    }
+
+    #pet-sprite.facing-left {
+      transform: scaleX(-1);
+    }
+
+    #pet-sprite.facing-left.bob {
+      transform: scaleX(-1);
+    }
+
+    /* Walking bob animation */
+    @keyframes bob {
+      0%, 100% { margin-bottom: 0px; }
+      50% { margin-bottom: 6px; }
+    }
+
+    #pet-sprite.bob {
+      animation: bob 0.35s ease-in-out infinite;
+    }
+
+    /* Sleeping gentle breathing */
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02, 0.98); }
+    }
+
+    #pet-sprite.breathe {
+      animation: breathe 2.5s ease-in-out infinite;
+    }
+
+    /* Happy wiggle */
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-3deg); }
+      75% { transform: rotate(3deg); }
+    }
+
+    #pet-sprite.wiggle {
+      animation: wiggle 0.3s ease-in-out infinite;
+    }
+
+    /* Eating nod */
+    @keyframes eatNod {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+
+    #pet-sprite.eat-nod {
+      animation: eatNod 0.4s ease-in-out infinite;
+    }
+
+    /* Drag wobble */
+    @keyframes dangle {
+      0%, 100% { transform: rotate(-2deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    #pet-sprite.dangle {
+      animation: dangle 0.5s ease-in-out infinite;
+    }
+
+    /* Ball play bounce */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      30% { transform: translateY(-14px) rotate(-3deg); }
+      60% { transform: translateY(0) rotate(0deg); }
+      80% { transform: translateY(-6px) rotate(3deg); }
+    }
+
+    #pet-sprite.bounce {
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    /* Paw up (highfive / beg) */
+    @keyframes pawUp {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(-2deg); }
+    }
+
+    #pet-sprite.paw-up {
+      animation: pawUp 0.8s ease-in-out infinite;
+    }
+
+    /* Speech bubble */
+    #speech-bubble {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: rgba(255, 255, 255, 0.96);
+      border: 2px solid #f0d9b5;
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #5a4a3a;
+      white-space: nowrap;
+      max-width: 220px;
+      white-space: normal;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #speech-bubble.show {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+
+    #speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid #f0d9b5;
+    }
+
+    /* Particles layer */
+    #particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 50;
+    }
+
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      font-size: 16px;
+      animation-fill-mode: forwards;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(0.5); }
+      50% { opacity: 1; transform: translateY(-30px) scale(1.1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+    }
+
+    @keyframes zzzFloat {
+      0% { opacity: 0; transform: translateY(0) translateX(0) scale(0.6); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-45px) translateX(15px) scale(1.2); }
+    }
+
+    .particle.heart {
+      animation: floatUp 1.2s ease-out forwards;
+    }
+
+    .particle.zzz {
+      animation: zzzFloat 2.2s ease-out forwards;
+      font-size: 14px;
+      color: #8ba4c4;
+      font-weight: bold;
+      font-family: "PingFang SC", sans-serif;
+    }
+
+    .particle.sparkle {
+      animation: floatUp 1s ease-out forwards;
+    }
+
+    .particle.crumb {
+      animation: floatUp 0.8s ease-out forwards;
+      font-size: 10px;
+    }
+
+    /* Shadow under pet */
+    #pet-shadow {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 14px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* Mobile / PWA styles */
+    @media (hover: none) and (pointer: coarse) {
+      html, body {
+        background: linear-gradient(180deg, #fef9f0 0%, #fdf0db 60%, #f5e6cc 100%);
+      }
+      #pet-container {
+        bottom: max(30px, env(safe-area-inset-bottom));
+      }
+      #speech-bubble {
+        top: max(20px, env(safe-area-inset-top));
+        font-size: 14px;
+        padding: 12px 16px;
+        max-width: 260px;
+      }
+      #pet-sprite {
+        width: 160px;
+        height: 160px;
+      }
+    }
+
+    /* Fullscreen PWA mode */
+    @media all and (display-mode: standalone) {
+      html, body {
+        background: linear-gradient(180deg, #fef9f0 0%, #fdf0db 60%, #f5e6cc 100%);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="speech-bubble"></div>
+  <div id="particles"></div>
+  <div id="pet-shadow"></div>
+  <div id="pet-container">
+    <img id="pet-sprite" src="assets/idle.png" alt="Winston" draggable="false">
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

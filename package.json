@@ -1,0 +1,37 @@
+{
+  "name": "winston-desktop-pet",
+  "version": "1.0.0",
+  "description": "Winston 桌面电子宠物 - 永远陪着你",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --mac",
+    "pack": "electron-builder --mac --dir"
+  },
+  "author": "Winston's Human",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.0"
+  },
+  "build": {
+    "appId": "com.winston.desktoppet",
+    "productName": "Winston",
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ]
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "renderer.js",
+      "assets/**/*"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+icon.iconset/
+vibe_images/
+*.log
+.DS_Store
