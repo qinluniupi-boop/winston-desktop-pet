@@ -1,21 +1,21 @@
-const CACHE_NAME = 'winston-pet-v2';
+const CACHE_NAME = 'winston-pet-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/renderer.js',
-  '/assets/idle.png',
-  '/assets/walk1.png',
-  '/assets/walk2.png',
-  '/assets/sleep.png',
-  '/assets/happy.png',
-  '/assets/eat.png',
-  '/assets/drag.png',
-  '/assets/ball.png',
-  '/assets/highfive.png',
-  '/assets/liedown.png',
-  '/assets/beg.png',
-  '/assets/icon-192.png',
-  '/assets/icon-512.png'
+  './',
+  './index.html',
+  './renderer.js',
+  './assets/idle.png',
+  './assets/walk1.png',
+  './assets/walk2.png',
+  './assets/sleep.png',
+  './assets/happy.png',
+  './assets/eat.png',
+  './assets/drag.png',
+  './assets/ball.png',
+  './assets/highfive.png',
+  './assets/liedown.png',
+  './assets/beg.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {

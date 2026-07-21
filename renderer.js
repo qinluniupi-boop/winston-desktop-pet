@@ -622,7 +622,7 @@ window.addEventListener('load', () => {
 
   // Register service worker for PWA
   if (!isElectron && 'serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
   // Mobile: add floating action menu
