@@ -28,7 +28,8 @@ const SPRITES = {
   ball: 'assets/ball.png',
   highfive: 'assets/highfive.png',
   liedown: 'assets/liedown.png',
-  beg: 'assets/beg.png'
+  beg: 'assets/beg.png',
+  bath: 'assets/bath.png'
 };
 
 // Preload all sprites
@@ -155,11 +156,18 @@ const MESSAGES = {
   noon: ['中午啦，记得吃饭哦', '午饭吃什么呀？别饿着', '中午好~ 休息一下下'],
   afternoon: ['下午好~ 喝杯茶吧', '下午啦，别太拼了', '阳光正好，想出去走走吗'],
   evening: ['晚上好~ 辛苦一天啦', '傍晚了，放松一下吧', '晚上好，今天也辛苦了'],
-  night: ['这么晚还没睡呀…早点休息', '夜深了，我陪你', '晚安，做个好梦~', '熬夜的话，我陪你一起']
+  night: ['这么晚还没睡呀…早点休息', '夜深了，我陪你', '晚安，做个好梦~', '熬夜的话，我陪你一起'],
+  bath: [
+    '泡泡浴~ 好舒服呀',
+    '洗香香啦！汪~',
+    '我最爱洗澡了！',
+    '搓搓搓~ 干干净净',
+    '洗完澡我又是帅气的狗狗了'
+  ]
 };
 
 // ─── State ───
-let state = 'idle';          // idle | walk | sleep | happy | eat | drag | ball | highfive | liedown | beg
+let state = 'idle';          // idle | walk | sleep | happy | eat | drag | ball | highfive | liedown | beg | bath
 let facing = 1;              // 1 = right, -1 = left
 let stateTimer = null;       // main state timeout
 let walkFrameInterval = null;
@@ -333,6 +341,17 @@ function burstStars(count = 4) {
   }
 }
 
+function burstBubbles(count = 8) {
+  const rect = petContainer.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      spawnParticle('sparkle', pick(['🫧', '🧼', '💧', '✨']), cx + rand(-30, 30), cy + rand(-20, 20));
+    }, i * 160);
+  }
+}
+
 function startZzz() {
   stopZzz();
   zzzInterval = setInterval(() => {
@@ -499,6 +518,18 @@ function enterState(newState) {
         enterState('idle');
         if (Math.random() > 0.5) say('哼，小气鬼…汪', 2500);
       }, 5000);
+      break;
+
+    case 'bath':
+      setSprite('bath');
+      sprite.classList.add('wiggle');
+      burstBubbles(8);
+      say(pick(MESSAGES.bath), 3500);
+      stateTimer = setTimeout(() => {
+        busy = false;
+        enterState('happy');
+        stateTimer = setTimeout(() => enterState('idle'), 2000);
+      }, 4000);
       break;
   }
 }
@@ -698,6 +729,11 @@ if (isElectron) {
         enterState('eat');
         recordInteraction();
         break;
+      case 'bath':
+        busy = true;
+        enterState('bath');
+        recordInteraction();
+        break;
       case 'ball':
         busy = true;
         enterState('ball');
@@ -803,6 +839,7 @@ window.addEventListener('load', () => {
       <button id="fab-btn" aria-label="Menu">🐾</button>
       <div id="fab-options">
         <button data-action="feed" title="喂零食">🦴</button>
+        <button data-action="bath" title="洗澡澡">🛁</button>
         <button data-action="ball" title="玩球球">🎾</button>
         <button data-action="highfive" title="击掌">✋</button>
         <button data-action="beg" title="讨要食物">🥺</button>
@@ -939,6 +976,8 @@ window.addEventListener('load', () => {
             say(pick(MESSAGES.petted), 3000); onPetted(); break;
           case 'feed':
             busy = true; enterState('eat'); recordInteraction(); break;
+          case 'bath':
+            busy = true; enterState('bath'); recordInteraction(); break;
           case 'ball':
             busy = true; enterState('ball'); setMood('excited'); recordInteraction(); break;
           case 'highfive':

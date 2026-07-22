@@ -1,4 +1,4 @@
-const CACHE_NAME = 'winston-pet-v3';
+const CACHE_NAME = 'winston-pet-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const ASSETS = [
   './assets/highfive.png',
   './assets/liedown.png',
   './assets/beg.png',
+  './assets/bath.png',
   './assets/icon-192.png',
   './assets/icon-512.png'
 ];

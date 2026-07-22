@@ -74,6 +74,13 @@ function createTray() {
         win.webContents.send('action', 'feed');
       }
     },
+    {
+      label: '洗澡澡 🛁',
+      click: () => {
+        win.show();
+        win.webContents.send('action', 'bath');
+      }
+    },
     { type: 'separator' },
     {
       label: '玩球球',
