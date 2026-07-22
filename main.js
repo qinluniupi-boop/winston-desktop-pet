@@ -120,6 +120,12 @@ function createTray() {
     },
     { type: 'separator' },
     {
+      label: '隐藏 Winston',
+      click: () => {
+        win.hide();
+      }
+    },
+    {
       label: '退出（Winston 会想你的）',
       click: () => {
         app.isQuitting = true;

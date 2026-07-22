@@ -124,7 +124,38 @@ const MESSAGES = {
     '就一小口，好不好嘛…',
     '（用水汪汪的大眼睛看着你）',
     '我保证只吃一点点…'
-  ]
+  ],
+  lonely: [
+    '你在忙吗…我想你了',
+    '这里好安静…不过没关系，我一直在',
+    '（小声）不要忘记我呀…',
+    '我会一直在这里等你的',
+    '抬头看看我嘛~ 我陪着你呢',
+    '一个人也要好好的哦'
+  ],
+  loved: [
+    '我是世界上最幸福的狗狗！',
+    '被你这样爱着，真好',
+    '我的心都要化啦~',
+    '最爱你了！永远永远！',
+    '这样的日子，好想一直过下去',
+    '有你在我身边，就够了'
+  ],
+  comfort: [
+    '如果今天不开心，就来抱抱我吧',
+    '没关系的，慢慢来，我陪你',
+    '你已经做得很好了，真的',
+    '难过的时候就看看我，我一直在',
+    '深呼吸~ 一切都会好起来的',
+    '不管发生什么，我都站在你这边',
+    '想哭就哭吧，我帮你挡着',
+    '你不用一直坚强的，在我面前可以放松'
+  ],
+  morning: ['早上好呀！新的一天~', '早安！今天也要元气满满哦', '早上好，我陪你开始新的一天'],
+  noon: ['中午啦，记得吃饭哦', '午饭吃什么呀？别饿着', '中午好~ 休息一下下'],
+  afternoon: ['下午好~ 喝杯茶吧', '下午啦，别太拼了', '阳光正好，想出去走走吗'],
+  evening: ['晚上好~ 辛苦一天啦', '傍晚了，放松一下吧', '晚上好，今天也辛苦了'],
+  night: ['这么晚还没睡呀…早点休息', '夜深了，我陪你', '晚安，做个好梦~', '熬夜的话，我陪你一起']
 };
 
 // ─── State ───
@@ -141,6 +172,23 @@ let hasMoved = false;
 let lastMouseX = 0;
 let lastMouseY = 0;
 let busy = false;            // during special actions (pet/feed)
+
+// ─── Mood / Emotion System ───
+const MOODS = {
+  calm:    { emoji: '🙂', label: '平静' },
+  happy:   { emoji: '😊', label: '开心' },
+  loved:   { emoji: '🥰', label: '被爱包围' },
+  excited: { emoji: '🤩', label: '兴奋' },
+  lonely:  { emoji: '🥺', label: '想你' },
+  sleepy:  { emoji: '😪', label: '困困' }
+};
+
+let mood = 'calm';
+let lastInteraction = Date.now();
+let petStreak = 0;
+let petStreakTimer = null;
+let moodIndicator = null;
+let isHidden = false;
 
 // ─── Helpers ───
 function rand(min, max) {
@@ -172,6 +220,64 @@ function clearAllTimers() {
   walkFrameInterval = null;
   walkMoveInterval = null;
 }
+
+// ─── Mood Functions ───
+function setMood(newMood) {
+  mood = newMood;
+  if (moodIndicator) {
+    moodIndicator.textContent = MOODS[newMood].emoji;
+    moodIndicator.title = MOODS[newMood].label;
+    moodIndicator.classList.remove('pop');
+    void moodIndicator.offsetWidth; // trigger reflow for animation
+    moodIndicator.classList.add('pop');
+  }
+}
+
+function recordInteraction() {
+  lastInteraction = Date.now();
+  if (mood === 'lonely') setMood('happy');
+}
+
+function onPetted() {
+  recordInteraction();
+  petStreak++;
+  clearTimeout(petStreakTimer);
+  petStreakTimer = setTimeout(() => { petStreak = 0; }, 5000);
+
+  if (petStreak >= 5 && mood !== 'loved') {
+    // Lots of love in a short time → overwhelmed with joy
+    setMood('loved');
+    say(pick(MESSAGES.loved), 4500);
+    burstHearts(10);
+  } else {
+    setMood('happy');
+  }
+}
+
+function getTimeGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11) return pick(MESSAGES.morning);
+  if (h >= 11 && h < 14) return pick(MESSAGES.noon);
+  if (h >= 14 && h < 18) return pick(MESSAGES.afternoon);
+  if (h >= 18 && h < 23) return pick(MESSAGES.evening);
+  return pick(MESSAGES.night);
+}
+
+// Periodic mood check: loneliness & sleepiness
+setInterval(() => {
+  if (isHidden) return;
+  if (state === 'sleep') {
+    if (mood !== 'sleepy') setMood('sleepy');
+    return;
+  }
+  const idleSec = (Date.now() - lastInteraction) / 1000;
+  if (idleSec > 90 && mood !== 'lonely') {
+    setMood('lonely');
+    if (Math.random() > 0.35) say(pick(MESSAGES.lonely), 4500);
+  } else if (idleSec < 90 && mood === 'lonely') {
+    setMood('calm');
+  }
+}, 10000);
 
 // ─── Speech Bubble ───
 function say(text, duration = 4000) {
@@ -406,19 +512,25 @@ function scheduleNext() {
     }
 
     const roll = Math.random();
-    if (roll < 0.25) {
+    if (roll < 0.24) {
       enterState('walk');
-    } else if (roll < 0.37) {
+    } else if (roll < 0.36) {
       enterState('sleep');
-    } else if (roll < 0.45) {
+    } else if (roll < 0.44) {
       busy = true;
       enterState('ball');
-    } else if (roll < 0.52) {
+    } else if (roll < 0.51) {
       enterState('liedown');
-    } else if (roll < 0.58) {
+    } else if (roll < 0.57) {
       busy = true;
       enterState('beg');
-    } else if (roll < 0.72) {
+    } else if (roll < 0.64) {
+      // Comfort: sense you might need some warmth
+      say(pick(MESSAGES.comfort), 5000);
+      burstHearts(3);
+      setMood('loved');
+      scheduleNext();
+    } else if (roll < 0.76) {
       say(pick(MESSAGES.random));
       scheduleNext();
     } else {
@@ -478,10 +590,12 @@ document.addEventListener('mouseup', () => {
       // Wake him up gently
       enterState('idle');
       say(pick(MESSAGES.woken));
+      recordInteraction();
     } else {
       busy = true;
       enterState('happy');
       say(pick(MESSAGES.petted), 3000);
+      onPetted();
     }
   }
 });
@@ -490,6 +604,7 @@ document.addEventListener('mouseup', () => {
 sprite.addEventListener('dblclick', () => {
   burstHearts(8);
   say(pick(MESSAGES.random));
+  onPetted();
 });
 
 // ─── Touch Interactions (iPhone/mobile) ───
@@ -558,10 +673,12 @@ document.addEventListener('touchend', (e) => {
     if (state === 'sleep') {
       enterState('idle');
       say(pick(MESSAGES.woken));
+      recordInteraction();
     } else {
       busy = true;
       enterState('happy');
       say(pick(MESSAGES.petted), 3000);
+      onPetted();
     }
   }
 });
@@ -574,25 +691,33 @@ if (isElectron) {
         busy = true;
         enterState('happy');
         say(pick(MESSAGES.petted), 3000);
+        onPetted();
         break;
       case 'feed':
         busy = true;
         enterState('eat');
+        recordInteraction();
         break;
       case 'ball':
         busy = true;
         enterState('ball');
+        setMood('excited');
+        recordInteraction();
         break;
       case 'highfive':
         busy = true;
         enterState('highfive');
+        setMood('excited');
+        recordInteraction();
         break;
       case 'liedown':
         enterState('liedown');
+        recordInteraction();
         break;
       case 'beg':
         busy = true;
         enterState('beg');
+        recordInteraction();
         break;
       case 'sleep':
         busy = false;
@@ -606,15 +731,51 @@ if (isElectron) {
           say(pick(MESSAGES.greeting));
           burstHearts(3);
         }
+        recordInteraction();
         break;
     }
   });
 }
 
+// ─── Hide / Show ───
+let restoreBtn = null;
+
+function hidePet() {
+  isHidden = true;
+  clearAllTimers();
+  clearAnimations();
+  stopZzz();
+  bubble.classList.remove('show');
+  petContainer.style.display = 'none';
+  document.getElementById('pet-shadow').style.display = 'none';
+  if (moodIndicator) moodIndicator.style.display = 'none';
+  if (restoreBtn) restoreBtn.style.display = 'flex';
+}
+
+function showPet() {
+  isHidden = false;
+  petContainer.style.display = 'flex';
+  document.getElementById('pet-shadow').style.display = 'block';
+  if (moodIndicator) moodIndicator.style.display = 'flex';
+  if (restoreBtn) restoreBtn.style.display = 'none';
+  enterState('happy');
+  say(pick(['汪！我回来啦~', '嘿嘿，又想我了吧', '我一直都在哦', '躲猫猫结束！']), 3000);
+  burstHearts(4);
+  recordInteraction();
+}
+
 // ─── Startup ───
 window.addEventListener('load', () => {
+  // Create mood indicator (emoji floating near pet's head)
+  moodIndicator = document.createElement('div');
+  moodIndicator.id = 'mood-indicator';
+  moodIndicator.textContent = MOODS.calm.emoji;
+  moodIndicator.title = MOODS.calm.label;
+  document.body.appendChild(moodIndicator);
+
+  // Greeting based on time of day
   setTimeout(() => {
-    say(pick(MESSAGES.greeting), 5000);
+    say(getTimeGreeting(), 5000);
     burstHearts(4);
   }, 800);
 
@@ -625,8 +786,17 @@ window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
-  // Mobile: add floating action menu
+  // Mobile: add floating action menu + hide/restore
   if (!isElectron) {
+    // Restore button (shown when pet is hidden)
+    restoreBtn = document.createElement('button');
+    restoreBtn.id = 'restore-btn';
+    restoreBtn.textContent = '🐾';
+    restoreBtn.title = '叫 Winston 回来';
+    restoreBtn.style.display = 'none';
+    restoreBtn.addEventListener('click', showPet);
+    document.body.appendChild(restoreBtn);
+
     const fab = document.createElement('div');
     fab.id = 'fab-menu';
     fab.innerHTML = `
@@ -638,6 +808,7 @@ window.addEventListener('load', () => {
         <button data-action="beg" title="讨要食物">🥺</button>
         <button data-action="liedown" title="趴下">😴</button>
         <button data-action="sleep" title="睡觉">💤</button>
+        <button data-action="hide" title="隐藏 Winston">🙈</button>
       </div>
     `;
     document.body.appendChild(fab);
@@ -645,6 +816,46 @@ window.addEventListener('load', () => {
     // Add styles
     const style = document.createElement('style');
     style.textContent = `
+      #mood-indicator {
+        position: fixed;
+        bottom: max(190px, calc(env(safe-area-inset-bottom) + 190px));
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 26px;
+        z-index: 90;
+        pointer-events: none;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+      }
+      #mood-indicator.pop {
+        animation: moodPop 0.4s ease;
+      }
+      @keyframes moodPop {
+        0% { transform: translateX(-50%) scale(0.3); }
+        60% { transform: translateX(-50%) scale(1.3); }
+        100% { transform: translateX(-50%) scale(1); }
+      }
+      #restore-btn {
+        position: fixed;
+        bottom: max(30px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(240, 217, 181, 0.95);
+        font-size: 26px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        animation: restorePulse 2s ease-in-out infinite;
+      }
+      @keyframes restorePulse {
+        0%, 100% { transform: translateX(-50%) scale(1); }
+        50% { transform: translateX(-50%) scale(1.1); }
+      }
       #fab-menu {
         position: fixed;
         bottom: 20px;
@@ -725,19 +936,21 @@ window.addEventListener('load', () => {
         switch (action) {
           case 'pet':
             busy = true; enterState('happy');
-            say(pick(MESSAGES.petted), 3000); break;
+            say(pick(MESSAGES.petted), 3000); onPetted(); break;
           case 'feed':
-            busy = true; enterState('eat'); break;
+            busy = true; enterState('eat'); recordInteraction(); break;
           case 'ball':
-            busy = true; enterState('ball'); break;
+            busy = true; enterState('ball'); setMood('excited'); recordInteraction(); break;
           case 'highfive':
-            busy = true; enterState('highfive'); break;
+            busy = true; enterState('highfive'); setMood('excited'); recordInteraction(); break;
           case 'liedown':
-            enterState('liedown'); break;
+            enterState('liedown'); recordInteraction(); break;
           case 'beg':
-            busy = true; enterState('beg'); break;
+            busy = true; enterState('beg'); recordInteraction(); break;
           case 'sleep':
             busy = false; enterState('sleep'); break;
+          case 'hide':
+            hidePet(); break;
         }
         menuOpen = false;
         fabOptions.classList.remove('show');
