@@ -734,6 +734,10 @@ if (isElectron) {
         enterState('bath');
         recordInteraction();
         break;
+      case 'walk':
+        enterState('walk');
+        recordInteraction();
+        break;
       case 'ball':
         busy = true;
         enterState('ball');
@@ -840,6 +844,7 @@ window.addEventListener('load', () => {
       <div id="fab-options">
         <button data-action="feed" title="喂零食">🦴</button>
         <button data-action="bath" title="洗澡澡">🛁</button>
+        <button data-action="walk" title="让他走走">🚶</button>
         <button data-action="ball" title="玩球球">🎾</button>
         <button data-action="highfive" title="击掌">✋</button>
         <button data-action="beg" title="讨要食物">🥺</button>
@@ -978,6 +983,8 @@ window.addEventListener('load', () => {
             busy = true; enterState('eat'); recordInteraction(); break;
           case 'bath':
             busy = true; enterState('bath'); recordInteraction(); break;
+          case 'walk':
+            enterState('walk'); recordInteraction(); break;
           case 'ball':
             busy = true; enterState('ball'); setMood('excited'); recordInteraction(); break;
           case 'highfive':

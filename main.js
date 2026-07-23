@@ -90,6 +90,13 @@ function createTray() {
       }
     },
     {
+      label: '让他走走 🚶',
+      click: () => {
+        win.show();
+        win.webContents.send('action', 'walk');
+      }
+    },
+    {
       label: '击掌 ✋',
       click: () => {
         win.show();
